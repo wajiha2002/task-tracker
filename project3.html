@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daily Task Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: beige;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      width: 450px;
+      border-radius: 8px;
+    
+    }
+    h2 {
+      text-align: center;
+      color: rgb(41, 2, 41);
+    }
+    .date {
+      text-align: center;
+      color: gray;
+      margin: 10px 0;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+    .task-input {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+    }
+    .task-input input, .task-input select {
+      flex: 1;
+      padding: 6px;
+    }
+    .task-input button {
+      padding: 6px 12px;
+      background:rgb(41, 2, 41);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 15px;
+    }
+    .filters button {
+      padding: 5px 10px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+    }
+    .filters .active {
+      background:rgb(41, 2, 41);
+      color: white;
+    }
+    
+    
+    li {
+      background: rgb(41, 2, 41);
+      margin-bottom: 8px;
+      padding: 8px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+    li.done span {
+      
+      color: gray;
+    }
+    .priority {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+    .delete-btn {
+      background: red;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .clear-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px;
+      background: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Daily Task Tracker</h2>
+    <div class="date" id="date"></div>
+
+    <div class="stats">
+      <div>Total: <span id="total">0</span></div>
+      <div>Completed: <span id="completed">0</span></div>
+      <div>Pending: <span id="pending">0</span></div>
+    </div>
+
+    <div class="task-input">
+      <input type="text" id="taskInput" placeholder="Enter task">
+      <select id="priority">
+        <option value="LOW">Low</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="HIGH">High</option>
+      </select>
+      <button onclick="addTask()">Add</button>
+    </div>
+
+    <div class="filters">
+      <button class="active" onclick="filterTasks('all')">All</button>
+      <button onclick="filterTasks('pending')">Pending</button>
+      <button onclick="filterTasks('completed')">Completed</button>
+      <button onclick="filterTasks('HIGH')">High</button>
+      <button onclick="filterTasks('MEDIUM')">Medium</button>
+      <button onclick="filterTasks('LOW')">Low</button>
+    </div>
+<ul id="taskList"></ul>
+    <button class="clear-btn" onclick="clearCompleted()">Clear Completed</button>
+  </div>
+
+  <script>
+    var tasks = [];
+    var currentFilter = "all";
+     var dateEl = document.getElementById("date");
+    var today = new Date();
+    dateEl.textContent = today.toDateString();
+
+    function addTask() {
+      var input = document.getElementById("taskInput");
+      var priority = document.getElementById("priority").value;
+      var text = input.value;
+
+      if (text === "") {
+        alert("Please enter a task");
+        return;
+      }
+      tasks.push({ text: text, priority: priority, done: false });
+      input.value = "";
+      showTasks();
+    }
+
+    function showTasks() {
+      var list = document.getElementById("taskList");
+      list.innerHTML = "";
+
+      var total = 0, completed = 0, pending = 0;
+
+      for (var i = 0; i < tasks.length; i++) {
+        var task = tasks[i];
+        if (currentFilter === "pending" && task.done) continue;
+        if (currentFilter === "completed" && !task.done) continue;
+        if (currentFilter === "HIGH" || currentFilter === "MEDIUM" || currentFilter === "LOW") {
+          if (task.priority !== currentFilter) continue;
+        }
+
+        total++;
+        if (task.done) completed++; else pending++;
+        var li = document.createElement("li");
+        if (task.done) li.classList.add("done");
+
+        var span = document.createElement("span");
+        span.textContent = task.text + " (" + task.priority + ")";
+        span.onclick = (function(index) {
+          return function() {
+            tasks[index].done = !tasks[index].done;
+            showTasks();
+          }
+        })(i);
+
+        var delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.className = "delete-btn";
+        delBtn.onclick = (function(index) {
+          return function() {
+            tasks.splice(index, 1);
+            showTasks();
+          }
+        })(i);
+
+        li.appendChild(span);
+        li.appendChild(delBtn);
+        list.appendChild(li);
+      }
+
+      
+      document.getElementById("total").textContent = tasks.length;
+      document.getElementById("completed").textContent = completed;
+      document.getElementById("pending").textContent = pending;
+    }
+
+    function filterTasks(type) {
+      currentFilter = type;
+
+      var buttons = document.querySelectorAll(".filters button");
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].classList.remove("active");
+      }
+      event.target.classList.add("active");
+
+      showTasks();
+    }
+
+    function clearCompleted() {
+      var newTasks = [];
+      for (var i = 0; i < tasks.length; i++) {
+        if (tasks[i].done) {
+          newTasks.push(tasks[i]);
+        }
+      }
+      tasks = newTasks;
+      showTasks();
+    }
+  </script>
+</body>
+</html>
